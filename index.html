@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8' />
+        <meta name="description" content="Pes.js : JavaScript demo of Pyramidal Encryption Standard" />
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        <title>Pes.js</title>
+    </head>
+    <body>
+        <header>
+            <h1>
+                PES.js
+            </h1>
+            <h2>
+                Pyramidal Encryption Standard
+            </h2>
+            <nav>
+                <ul>
+                    <li>
+                        <a id="active" href="">Demo</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/Lcfvs/PES.js">Sources</a>
+                    </li>
+                </ul>
+            </nav>
+        </header>
+        <hr />
+        <section>
+            <form>
+                <fieldset>
+                    <p>
+                        <label for="dataTextarea">Data :
+                            <br />
+                            <textarea id="dataTextarea" rows="5" cols="100"></textarea>
+                        </label>
+                    </p>
+                    <p>
+                        <label for="keyInput">Encryption key :
+                            <br />
+                            <textarea id="keyInput" rows="5" cols="100"></textarea>
+                        </label>
+                    </p>
+                    <p>
+                        <input id="encrypt" type="submit" value="Encrypt" />
+                        <input id="decrypt" type="submit" value="Decrypt" />
+                    </p>
+                </fieldset>
+            </form>
+        </section>
+        <hr />
+        <footer>
+            <p>Pes.js maintained by <a href="https://github.com/Lcfvs">Lcfvs</a> and published with <a href="http://pages.github.com">GitHub Pages</a></p> 
+        </footer>
+        <script src="js/PES.min.js"></script>
+        <script src="js/PES.demo.js"></script>
+    </body>
+</html>
