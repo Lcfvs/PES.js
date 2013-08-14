@@ -8,6 +8,8 @@ This project is a JavaScript version of the Pyramidal Encryption Standard, under
 
 Compatible with https://github.com/Lcfvs/Sandbox.js
 
+Demo : http://lcfvs.github.io/PES.js/
+
 
 Syntax :
 --------
