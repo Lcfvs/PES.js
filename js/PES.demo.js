@@ -20,7 +20,7 @@
             method = this.id;
                 
             if (method === 'decrypt') {
-                data = unescape(decodeURIComponent(escape(atob(data))));
+                data = unescape(decodeURIComponent(escape(atob(data.replace(/(.{6})/g, 'JX$1')))));
             }
             
             PES[method](data, keyInput.value, function(data) {
@@ -29,7 +29,7 @@
                 result = data;
                 
                 if (method === 'encrypt') {
-                    result = btoa(unescape(encodeURIComponent(escape(result))));    
+                    result = btoa(unescape(encodeURIComponent(escape(result)))).replace(/JX(.{6})/g, '$1');
                 }
                 
                 dataTextarea.value = result;
