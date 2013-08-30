@@ -1,7 +1,10 @@
 (function () {
     var gEBI, dataTextarea, keyInput, methodSelect, encryptButton, decryptButton;
     
-    gEBI = document.getElementById;
+    gEBI = function gEBI(id) {
+        return document.getElementById(id);
+    };
+    
     dataTextarea = gEBI('dataTextarea');
     keyInput = gEBI('keyInput');
     methodSelect = gEBI('methodSelect');
