@@ -20,7 +20,7 @@
             method = this.id;
                 
             if (method === 'decrypt') {
-                result = decodeURIComponent(escape(atob(data)));
+                data = decodeURIComponent(escape(atob(data)));
             }
             
             PES[method](data, keyInput.value, function(data) {
