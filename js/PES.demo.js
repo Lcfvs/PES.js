@@ -1,20 +1,39 @@
 (function () {
-    var dataTextarea, keyInput, methodSelect, encryptButton, decryptButton;
-    dataTextarea = document.getElementById('dataTextarea');
-    keyInput = document.getElementById('keyInput');
-    methodSelect = document.getElementById('methodSelect');
-    encryptButton = document.getElementById('encrypt');
-    decryptButton = document.getElementById('decrypt');
+    var gEBI, dataTextarea, keyInput, methodSelect, encryptButton, decryptButton;
+    
+    gEBI = document.getElementById;
+    dataTextarea = gEBI('dataTextarea');
+    keyInput = gEBI('keyInput');
+    methodSelect = gEBI('methodSelect');
+    encryptButton = gEBI('encrypt');
+    decryptButton = gEBI('decrypt');
+    
     encryptButton.onclick = decryptButton.onclick = function (event) {
+        var method;
+        
         if (keyInput.value !== '') {
-            PES[this.id](dataTextarea.value, keyInput.value, function(result) {
+            method = this.id;
+            
+            PES[method](dataTextarea.value, keyInput.value, function(data) {
+                var result;
+                
+                if (method === encrypt) {
+                    result = btoa(unescape(encodeURIComponent(data)));    
+                } else {
+                    result = decodeURIComponent(escape(atob(data)));
+                }
+                
                 dataTextarea.value = result;
             });
         } else {
-            alert('Invalid encryption key');
+            setTimeout(function () {
+                alert('Invalid encryption key');
+            });
         }
+        
         event.preventDefault();
         event.returnValue = false;
+        
         return false;
     };
 }());
