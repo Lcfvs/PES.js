@@ -12,18 +12,24 @@
     decryptButton = gEBI('decrypt');
     
     encryptButton.onclick = decryptButton.onclick = function (event) {
-        var method;
+        var data, method;
+        
+        data = dataTextarea.value;
         
         if (keyInput.value !== '') {
             method = this.id;
+                
+            if (method === 'decrypt') {
+                result = decodeURIComponent(escape(atob(data)));
+            }
             
-            PES[method](dataTextarea.value, keyInput.value, function(data) {
+            PES[method](data, keyInput.value, function(data) {
                 var result;
                 
-                if (method === encrypt) {
-                    result = btoa(unescape(encodeURIComponent(data)));    
-                } else {
-                    result = decodeURIComponent(escape(atob(data)));
+                result = data;
+                
+                if (method === 'encrypt') {
+                    result = btoa(unescape(encodeURIComponent(result)));    
                 }
                 
                 dataTextarea.value = result;
