@@ -129,13 +129,20 @@ var PES;
     self.PES = new PES;
 }());
 self.addEventListener('message', function (event) {
-    var message, method, data, key;
+    var message, method, key, data;
     message = event.data;
     method = message.method;
-    data = message.data;
     key = message.key;
+    data = message.data;
+    
+    if (method === 'encrypt') {
+        data = btoa(unescape(encodeURIComponent(escape(PES[method](data, key, 'utf-8'))))).replace(/JX(.{6})/g, '$1');
+    } else {
+        data = PES[method](unescape(decodeURIComponent(escape(atob(data.replace(/(.{6})/g, 'JX$1'))))), key, 'utf-8');
+    }
+    
     self.postMessage({
         type: 'result',
-        data: PES[method](data, key, 'utf-8')
+        data: data
     });
 }, false);
