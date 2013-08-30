@@ -1,8 +1,12 @@
 (function () {
-    var gEBI, dataTextarea, keyInput, methodSelect, encryptButton, decryptButton;
+    var gEBI, fixedEncodeURIComponent, dataTextarea, keyInput, methodSelect, encryptButton, decryptButton;
     
     gEBI = function gEBI(id) {
         return document.getElementById(id);
+    };
+    
+    fixedEncodeURIComponent = function fixedEncodeURIComponent(str) {
+      return encodeURIComponent(str).replace(/[!'()]/g, escape).replace(/\*/g, '%2A');
     };
     
     dataTextarea = gEBI('dataTextarea');
@@ -29,7 +33,7 @@
                 result = data;
                 
                 if (method === 'encrypt') {
-                    result = btoa(unescape(encodeURIComponent(result)));    
+                    result = btoa(unescape(fixedEncodeURIComponent(result)));    
                 }
                 
                 dataTextarea.value = result;
