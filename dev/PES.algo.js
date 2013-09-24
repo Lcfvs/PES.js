@@ -4,6 +4,7 @@ Released under the MIT license
 https://github.com/Lcfvs/PES.js
 */
 var PES;
+
 (function () {
     'use strict';
     
