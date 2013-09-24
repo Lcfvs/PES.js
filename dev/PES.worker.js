@@ -1,25 +1,31 @@
 /*
-    Copyright 2013 Lcf.vs
-    Released under the MIT license
-    https://github.com/Lcfvs/PES.js
+Copyright 2013 Lcf.vs
+Released under the MIT license
+https://github.com/Lcfvs/PES.js
 */
 var PES;
 (function () {
     'use strict';
-    var PES, encodingLengths, getCharCodes, getInternalKey, encrypt, decrypt, encryptData, decryptData;
+    
+	var PES, encodingLengths, getCharCodes, getInternalKey, encrypt, decrypt, encryptData, decryptData;
+	
     PES = function PES() {
         this.encrypt = encrypt;
         this.decrypt = decrypt;
     };
+	
     encodingLengths = {
         'utf-8': 65536
     };
+	
     getCharCodes = function getCharCodes(data) {
         var iterator, charCodes, length;
-        iterator = 0;
+    
+		iterator = 0;
         charCodes = [];
         length = data.length;
-        try {
+        
+		try {
             while (iterator < length) {
                 charCodes.push(data.charCodeAt(iterator));
                 iterator += 1;
@@ -27,15 +33,20 @@ var PES;
         } catch (e) {
             charCodes = charCodes.concat(getCharCodes(data.substring(iterator)));
         }
-        return charCodes;
+        
+		return charCodes;
     };
-    getInternalKey = function (encryptionKey, dataLength, encoding, currentKey) {
+    
+	getInternalKey = function (encryptionKey, dataLength, encoding, currentKey) {
         var key, dataCodes, keyCodes;
-        if (encryptionKey.length === 0) {
+    
+		if (encryptionKey.length === 0) {
             throw new Error('Invalid encryption key length');
         }
-        key = currentKey || '';
-        try {
+        
+		key = currentKey || '';
+        
+		try {
             while (key.length < dataLength) {
                 dataCodes = getCharCodes(encryptionKey);
                 keyCodes = getCharCodes(key || encryptionKey);
@@ -45,7 +56,8 @@ var PES;
         } catch(e) {
              key += getInternalKey(encryptionKey, dataLength, encoding, key);
         }
-        if (currentKey === undefined) {
+        
+		if (currentKey === undefined) {
             dataCodes = getCharCodes(encryptionKey);
             keyCodes = getCharCodes(key);
             encryptData(dataCodes, keyCodes, encodingLengths[encoding], dataCodes.length - 1, 0);
@@ -53,39 +65,57 @@ var PES;
         }
         return key;
     };
+	
     encrypt = function encrypt(data, encryptionKey, encoding) {
         var dataCodes, keyCodes;
-        dataCodes = getCharCodes(data);
+    
+		dataCodes = getCharCodes(data);
         keyCodes = getCharCodes(getInternalKey(encryptionKey, dataCodes.length, encoding));
         encryptData(dataCodes, keyCodes, encodingLengths[encoding], dataCodes.length - 1, 0);
-        return String.fromCharCode.apply(null, dataCodes);
+        
+		return String.fromCharCode.apply(null, dataCodes);
     };
+	
     decrypt = function decrypt(data, encryptionKey, encoding) {
         var dataCodes, keyCodes;
-        dataCodes = getCharCodes(data);
+        
+		dataCodes = getCharCodes(data);
         keyCodes = getCharCodes(getInternalKey(encryptionKey, dataCodes.length, encoding));
         decryptData(dataCodes, keyCodes, encodingLengths[encoding], 0, keyCodes.length - 1);
-        return String.fromCharCode.apply(null, dataCodes);
+        
+		return String.fromCharCode.apply(null, dataCodes);
     };
-    encryptData = function encryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator) {
-        var dataLimit, keyLength, dataCode, keyCode, prevDataCode;
-        dataLimit = dataCodes.length - 1;
+    
+	encryptData = function encryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator) {
+        var dataLength, dataLimit, keyLength, dataCode, keyCode, prevDataCode, min, max, diff;
+        
+		dataLength = dataCodes.length;
+		dataLimit = dataLength - 1;
         keyLength = keyCodes.length;
         keyCode = keyCodes[keyIterator];
-        try {
+        
+		try {
             while (keyIterator < keyLength) {
                 if (dataIterator === dataLimit) {
-                    if ((Math.min.apply(null, dataCodes) ^ Math.max.apply(null, dataCodes) ^ keyCode ^ encodingLength) & 1) {
+					min = Math.min.apply(null, dataCodes);
+					max = Math.max.apply(null, dataCodes);
+					diff = (max - min) % dataLength;
+					dataCodes.splice.bind(dataCodes, 0, dataLength).apply(dataCodes, dataCodes.slice(diff).concat(dataCodes.slice(0, diff)));
+					
+                    if ((min ^ max ^ keyCode ^ encodingLength) & 1) {
                         dataCodes.reverse();
                     }
                 }
-                dataCode = dataCodes[dataIterator];
+        
+				dataCode = dataCodes[dataIterator];
                 prevDataCode = dataIterator !== 0 ? dataCodes[dataIterator - 1] : keyCode;
                 dataCodes[dataIterator] = (prevDataCode + dataCode) ^ keyCode;
-                if (dataCodes[dataIterator] >= encodingLength) {
+                
+				if (dataCodes[dataIterator] >= encodingLength) {
                     dataCodes[dataIterator] -= encodingLength;
                 }
-                if (dataIterator === 0) {
+                
+				if (dataIterator === 0) {
                     dataIterator = dataLimit;
                     keyIterator += 1;
                     keyCode = keyCodes[keyIterator];
@@ -96,25 +126,38 @@ var PES;
         } catch (e) {
             encryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator);
         }
+		
         return dataCodes;
     };
+	
     decryptData = function decryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator) {
-        var dataLimit, dataCode, keyCode, prevDataCode;
-        dataLimit = dataCodes.length - 1;
+        var dataLength, dataLimit, dataCode, keyCode, prevDataCode, min, max, diff;
+        
+		dataLength = dataCodes.length;
+		dataLimit = dataLength - 1;
         keyCode = keyCodes[keyIterator];
-        try {
+        
+		try {
             while (keyIterator > -1) {
                 dataCode = dataCodes[dataIterator];
                 prevDataCode = dataIterator !== 0 ? dataCodes[dataIterator - 1] : keyCode;
                 dataCodes[dataIterator] = (dataCodes[dataIterator] ^ keyCode) - prevDataCode;
-                if (dataCodes[dataIterator] < 0) {
+        
+				if (dataCodes[dataIterator] < 0) {
                     dataCodes[dataIterator] += encodingLength;
                 }
-                if (dataIterator === dataLimit) {
-                    if ((Math.min.apply(null, dataCodes) ^ Math.max.apply(null, dataCodes) ^ keyCode ^ encodingLength) & 1) {
+                
+				if (dataIterator === dataLimit) {
+					min = Math.min.apply(null, dataCodes);
+					max = Math.max.apply(null, dataCodes);
+					
+					if ((min ^ max ^ keyCode ^ encodingLength) & 1) {
                         dataCodes.reverse();
                     }
-                    dataIterator = 0;
+					
+					diff = dataLength - (max - min) % dataLength;
+					dataCodes.splice.bind(dataCodes, 0, dataLength).apply(dataCodes, dataCodes.slice(diff).concat(dataCodes.slice(0, diff)));
+					dataIterator = 0;
                     keyIterator -= 1;
                     keyCode = keyCodes[keyIterator];
                 } else {
@@ -124,12 +167,16 @@ var PES;
         } catch (e) {
             decryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator);
         }
+		
         return dataCodes;
     };
+	
     self.PES = new PES;
 }());
+
 self.addEventListener('message', function (event) {
     var message, method, key, data;
+    
     message = event.data;
     method = message.method;
     key = message.key;
