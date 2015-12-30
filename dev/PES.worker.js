@@ -3,195 +3,212 @@ Copyright 2013 Lcf.vs
 Released under the MIT license
 https://github.com/Lcfvs/PES.js
 */
-var PES;
+'use strict';
 
-(function () {
-    'use strict';
-    
-    var PES, encodingLengths, getCharCodes, getInternalKey, encrypt, decrypt, encryptData, decryptData;
-    
-    PES = function PES() {
-        this.encrypt = encrypt;
-        this.decrypt = decrypt;
+var
+PES;
+
+PES = function(global) {
+    var
+    toCodePoints,
+    fromCodePoints,
+    fromByteString,
+    toByteString,
+    convert,
+    getInternalKey,
+    min,
+    max,
+    reverse,
+    encryptData,
+    decryptData;
+
+    toCodePoints = function(str) {
+        return [].map.call(str.normalize('NFKC'), function(chr) {
+            return chr.codePointAt(0);
+        });
     };
-    
-    encodingLengths = {
-        'utf-8': 65536
+
+    fromCodePoints = function(points) {
+        return String.fromCodePoint.apply(null, points);
     };
-    
-    getCharCodes = function getCharCodes(data) {
-        var iterator, charCodes, length;
-    
-        iterator = 0;
-        charCodes = [];
-        length = data.length;
+
+    fromByteString = function(str) {
+        var
+        codes;
         
-        try {
-            while (iterator < length) {
-                charCodes.push(data.charCodeAt(iterator));
-                iterator += 1;
+        codes = [];
+        
+        str.split('').forEach(function(chr, key) {
+            if (key & 1) {
+                return;
             }
-        } catch (e) {
-            charCodes = charCodes.concat(getCharCodes(data.substring(iterator)));
+            
+            codes.push(str.charCodeAt(key) * 256 + str.charCodeAt(key + 1));
+        });
+        
+        return codes;
+    };
+
+    toByteString = function(codes) {
+        var
+        bytes;
+        
+        bytes = [];
+        
+        codes.forEach(function(value) {
+            bytes.push(value >>> 8, value % 256);
+        });
+        
+        return String.fromCharCode.apply(null, bytes);
+    };
+
+    convert = function(data, method, inEncoding, outEncoding) {
+        if (method) {
+            return method(data);
         }
         
-        return charCodes;
+        return (new Buffer(data, inEncoding)).toString(outEncoding);
     };
     
-    getInternalKey = function (encryptionKey, dataLength, encoding, currentKey) {
-        var key, dataCodes, keyCodes;
-    
-        if (encryptionKey.length === 0) {
-            throw new Error('Invalid encryption key length');
-        }
+    getInternalKey = function(keyPoints, length) {
+        var
+        internalPoints,
+        runner;
         
-        key = currentKey || '';
+        internalPoints = encryptData(keyPoints, keyPoints);
         
-        try {
-            while (key.length < dataLength) {
-                dataCodes = getCharCodes(encryptionKey);
-                keyCodes = getCharCodes(key || encryptionKey);
-                encryptData(dataCodes, keyCodes, encodingLengths[encoding], dataCodes.length - 1, 0);
-                key += String.fromCharCode.apply(null, dataCodes);
+        runner = function() {
+            var
+            temp;
+            
+            temp = encryptData(internalPoints, keyPoints);
+            internalPoints = internalPoints.concat(temp);
+            
+            if (internalPoints.length > length) {
+                return internalPoints;
             }
-        } catch(e) {
-             key += getInternalKey(encryptionKey, dataLength, encoding, key);
+            
+            return runner;
+        };
+        
+        while (typeof runner === 'function') {
+            runner = runner();
         }
         
-        if (currentKey === undefined) {
-            dataCodes = getCharCodes(encryptionKey);
-            keyCodes = getCharCodes(key);
-            encryptData(dataCodes, keyCodes, encodingLengths[encoding], dataCodes.length - 1, 0);
-            key += String.fromCharCode.apply(null, dataCodes);
+        return runner;
+    };
+
+    min = function(values) {
+        return values.reduce(function(previous, current) {
+            return previous < current
+                ? previous
+                : current;
+        });
+    };
+
+    max = function(values) {
+        return values.reduce(function(previous, current) {
+            return previous > current
+                ? previous
+                : current;
+        });
+    };
+
+    reverse = function(dataPoints, keyPoint) {
+        if ((min(dataPoints) ^ max(dataPoints) ^ keyPoint) & 1) {
+            dataPoints.reverse();
         }
-		
-        return key;
+        
+        return dataPoints;
     };
     
-    encrypt = function encrypt(data, encryptionKey, encoding) {
-        var dataCodes, keyCodes;
-    
-        dataCodes = getCharCodes(data);
-        keyCodes = getCharCodes(getInternalKey(encryptionKey, dataCodes.length, encoding));
-        encryptData(dataCodes, keyCodes, encodingLengths[encoding], dataCodes.length - 1, 0);
+    encryptData = function(dataPoints, keyPoints) {
+        dataPoints = dataPoints.slice(0);
+        keyPoints = keyPoints.slice(0);
         
-        return String.fromCharCode.apply(null, dataCodes);
-    };
-    
-    decrypt = function decrypt(data, encryptionKey, encoding) {
-        var dataCodes, keyCodes;
-        
-        dataCodes = getCharCodes(data);
-        keyCodes = getCharCodes(getInternalKey(encryptionKey, dataCodes.length, encoding));
-        decryptData(dataCodes, keyCodes, encodingLengths[encoding], 0, keyCodes.length - 1);
-        
-        return String.fromCharCode.apply(null, dataCodes);
-    };
-    
-    encryptData = function encryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator) {
-        var dataLength, dataLimit, keyLength, dataCode, keyCode, prevDataCode, min, max, diff;
-        
-        dataLength = dataCodes.length;
-        dataLimit = dataLength - 1;
-        keyLength = keyCodes.length;
-        keyCode = keyCodes[keyIterator];
-        
-        try {
-            while (keyIterator < keyLength) {
-                if (dataIterator === dataLimit) {
-                    min = Math.min.apply(null, dataCodes);
-                    max = Math.max.apply(null, dataCodes);
-                    diff = (max - min) % dataLength;
-                    dataCodes.splice.bind(dataCodes, 0, dataLength).apply(dataCodes, dataCodes.slice(diff).concat(dataCodes.slice(0, diff)));
-                    
-                    if ((min ^ max ^ keyCode ^ encodingLength) & 1) {
-                        dataCodes.reverse();
-                    }
-                }
-        
-                dataCode = dataCodes[dataIterator];
-                prevDataCode = dataIterator !== 0 ? dataCodes[dataIterator - 1] : keyCode;
-                dataCodes[dataIterator] = (prevDataCode + dataCode) ^ keyCode;
+        keyPoints.forEach(function(keyPoint) {
+            var
+            last;
+            
+            last = keyPoint;
+            
+            dataPoints = reverse(dataPoints.map(function(dataPoint) {
+                var
+                current;
                 
-                if (dataCodes[dataIterator] >= encodingLength) {
-                    dataCodes[dataIterator] -= encodingLength;
-                }
+                current = ((last + dataPoint) ^ keyPoint) % 65536;
+                last = dataPoint;
                 
-                if (dataIterator === 0) {
-                    dataIterator = dataLimit;
-                    keyIterator += 1;
-                    keyCode = keyCodes[keyIterator];
-                } else {
-                    dataIterator -= 1;
-                }
-            }
-        } catch (e) {
-            encryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator);
-        }
+                return current;
+            }), keyPoint);
+        });
         
-        return dataCodes;
+        return dataPoints;
     };
-    
-    decryptData = function decryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator) {
-        var dataLength, dataLimit, dataCode, keyCode, prevDataCode, min, max, diff;
-        
-        dataLength = dataCodes.length;
-        dataLimit = dataLength - 1;
-        keyCode = keyCodes[keyIterator];
-        
-        try {
-            while (keyIterator > -1) {
-                dataCode = dataCodes[dataIterator];
-                prevDataCode = dataIterator !== 0 ? dataCodes[dataIterator - 1] : keyCode;
-                dataCodes[dataIterator] = (dataCodes[dataIterator] ^ keyCode) - prevDataCode;
-        
-                if (dataCodes[dataIterator] < 0) {
-                    dataCodes[dataIterator] += encodingLength;
-                }
+
+    decryptData = function(dataPoints, keyPoints) {
+        dataPoints = dataPoints.slice(0);
+        keyPoints = keyPoints.slice(0);
+        keyPoints.reverse();
+
+        keyPoints.forEach(function(keyPoint) {
+            var
+            last;
+            
+            last = keyPoint;
+            
+            dataPoints = reverse(dataPoints, keyPoint).map(function(dataPoint) {
+                last = ((dataPoint ^ keyPoint) - last + 65536) % 65536;
                 
-                if (dataIterator === dataLimit) {
-                    min = Math.min.apply(null, dataCodes);
-                    max = Math.max.apply(null, dataCodes);
-                    
-                    if ((min ^ max ^ keyCode ^ encodingLength) & 1) {
-                        dataCodes.reverse();
-                    }
-                    
-                    diff = dataLength - (max - min) % dataLength;
-                    dataCodes.splice.bind(dataCodes, 0, dataLength).apply(dataCodes, dataCodes.slice(diff).concat(dataCodes.slice(0, diff)));
-                    dataIterator = 0;
-                    keyIterator -= 1;
-                    keyCode = keyCodes[keyIterator];
-                } else {
-                    dataIterator += 1;
-                }
-            }
-        } catch (e) {
-            decryptData(dataCodes, keyCodes, encodingLength, dataIterator, keyIterator);
-        }
+                return last;
+            });
+        });
         
-        return dataCodes;
+        return dataPoints;
     };
-    
-    self.PES = new PES;
-}());
+        
+    return {
+        encrypt: function(data, key) {
+            var
+            keyPoints,
+            dataPoints,
+            internalPoints,
+            encrypted;
+            
+            keyPoints = toCodePoints(key);
+            dataPoints = toCodePoints(data);
+            internalPoints = getInternalKey(keyPoints, dataPoints.length);
+            dataPoints = encryptData(dataPoints, internalPoints);
+            encrypted = toByteString(dataPoints);
+
+            return convert(encrypted, global.btoa, 'binary', 'base64');
+        },
+        decrypt: function(data, key) {
+            var
+            encrypted,
+            keyPoints,
+            dataPoints,
+            internalPoints;
+                
+            encrypted = convert(data, global.atob, 'base64', 'binary');
+            keyPoints = toCodePoints(key);
+            dataPoints = fromByteString(encrypted);
+            internalPoints = getInternalKey(keyPoints, dataPoints.length);
+            dataPoints = decryptData(dataPoints, internalPoints);
+
+            return fromCodePoints(dataPoints);
+        }
+    };
+}(self);
 
 self.addEventListener('message', function (event) {
-    var message, method, key, data;
+    var
+    message;
     
     message = event.data;
-    method = message.method;
-    key = message.key;
-    data = message.data;
-    
-    if (method === 'encrypt') {
-        data = btoa(unescape(encodeURIComponent(escape(PES[method](data, key, 'utf-8'))))).replace(/JX(.{6})/g, '$1');
-    } else {
-        data = PES[method](unescape(decodeURIComponent(escape(atob(data.replace(/(.{6})/g, 'JX$1'))))), key, 'utf-8');
-    }
     
     self.postMessage({
         type: 'result',
-        data: data
+        data: PES[message.method](message.data, message.key)
     });
 }, false);
