@@ -89,14 +89,10 @@ PES = ((
         decrypt: (data, key) => ((dataPoints = fromByteString(convert(data, global.atob, 'base64', 'binary'))) => fromCodePoints(decryptData(dataPoints, getInternalKey(toCodePoints(key), dataPoints.length))))()
     }))(typeof global === 'object' ? global : this);
     
-self.addEventListener('message', function (event) {
-    var
-    message;
-    
-    message = event.data;
-    
+self.addEventListener('message', (event, message = event.data) => 
     self.postMessage({
         type: 'result',
         data: PES[message.method](message.data, message.key)
-    });
-}, false);
+    }),
+    false
+);

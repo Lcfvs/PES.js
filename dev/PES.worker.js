@@ -201,7 +201,7 @@ PES = function(global) {
     };
 }(self);
 
-self.addEventListener('message', function (event) {
+self.addEventListener('message', function(event) {
     var
     message;
     
