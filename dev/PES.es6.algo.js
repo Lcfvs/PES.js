@@ -88,15 +88,3 @@ PES = ((
         encrypt: (data, key) => ((dataPoints = toCodePoints(data)) => convert(toByteString(encryptData(dataPoints, getInternalKey(toCodePoints(key), dataPoints.length))), global.btoa, 'binary', 'base64'))(),
         decrypt: (data, key) => ((dataPoints = fromByteString(convert(data, global.atob, 'base64', 'binary'))) => fromCodePoints(decryptData(dataPoints, getInternalKey(toCodePoints(key), dataPoints.length))))()
     }))(typeof global === 'object' ? global : this);
-
-var
-data,
-key,
-encrypted,
-decrypted;
-
-data = 'hdxjfgchvjhkã\u1F4A9'.repeat(100);
-key = 'abcdef';
-encrypted = PES.encrypt(data, key);
-decrypted = PES.decrypt(encrypted, key);
-console.log(decrypted === data);
