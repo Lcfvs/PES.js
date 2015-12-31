@@ -3,52 +3,63 @@
     Released under the MIT license
     https://github.com/Lcfvs/PES.js
 */
+'use strict';
+
 var PES;
 
-(function () {
-    'use strict';
+PES = function() {
     
-    var base64PES, createWorker, methods, onmessage;
+    var
+    source,
+    url,
+    createWorker,
+    methods,
+    onmessage;
     
-    base64PES = 'data:application/javascript;base64,InVzZSBzdHJpY3QiDQp2YXIgJD1zZWxmLGE9ZnVuY3Rpb24obil7dmFyIHIsdCxlLHUsbyxjLGksZixhLGwscA0KcmV0dXJuIHI9ZnVuY3Rpb24obil7cmV0dXJuW10ubWFwLmNhbGwobi5ub3JtYWxpemUoIk5GS0MiKSxmdW5jdGlvbihuKXtyZXR1cm4gbi5jb2RlUG9pbnRBdCgwKX0pfSx0PWZ1bmN0aW9uKG4pe3JldHVybiBTdHJpbmcuZnJvbUNvZGVQb2ludC5hcHBseShudWxsLG4pfSxlPWZ1bmN0aW9uKG4pe3ZhciByDQpyZXR1cm4gcj1bXSxuLnNwbGl0KCIiKS5mb3JFYWNoKGZ1bmN0aW9uKHQsZSl7MSZlfHxyLnB1c2goMjU2Km4uY2hhckNvZGVBdChlKStuLmNoYXJDb2RlQXQoZSsxKSl9KSxyfSx1PWZ1bmN0aW9uKG4pe3ZhciByDQpyZXR1cm4gcj1bXSxuLmZvckVhY2goZnVuY3Rpb24obil7ci5wdXNoKG4+Pj44LG4lMjU2KX0pLFN0cmluZy5mcm9tQ2hhckNvZGUuYXBwbHkobnVsbCxyKX0sbz1mdW5jdGlvbihuLHIsdCxlKXtyZXR1cm4gcj9yKG4pOm5ldyBCdWZmZXIobix0KS50b1N0cmluZyhlKX0sYz1mdW5jdGlvbihuLHIpe3ZhciB0LGUNCmZvcih0PWwobixuKSxlPWZ1bmN0aW9uKCl7dmFyIHUNCnJldHVybiB1PWwodCxuKSx0PXQuY29uY2F0KHUpLHQubGVuZ3RoPnI/dDplfTsiZnVuY3Rpb24iPT10eXBlb2YgZTspZT1lKCkNCnJldHVybiBlfSxpPWZ1bmN0aW9uKG4pe3JldHVybiBuLnJlZHVjZShmdW5jdGlvbihuLHIpe3JldHVybiByPm4/bjpyfSl9LGY9ZnVuY3Rpb24obil7cmV0dXJuIG4ucmVkdWNlKGZ1bmN0aW9uKG4scil7cmV0dXJuIG4+cj9uOnJ9KX0sYT1mdW5jdGlvbihuLHIpe3JldHVybiAxJihpKG4pXmYobilecikmJm4ucmV2ZXJzZSgpLG59LGw9ZnVuY3Rpb24obixyKXtyZXR1cm4gbj1uLnNsaWNlKDApLHI9ci5zbGljZSgwKSxyLmZvckVhY2goZnVuY3Rpb24ocil7dmFyIHQNCnQ9cixuPWEobi5tYXAoZnVuY3Rpb24obil7dmFyIGUNCnJldHVybiBlPSh0K25eciklNjU1MzYsdD1uLGV9KSxyKX0pLG59LHA9ZnVuY3Rpb24obixyKXtyZXR1cm4gbj1uLnNsaWNlKDApLHI9ci5zbGljZSgwKSxyLnJldmVyc2UoKSxyLmZvckVhY2goZnVuY3Rpb24ocil7dmFyIHQNCnQ9cixuPWEobixyKS5tYXAoZnVuY3Rpb24obil7cmV0dXJuIHQ9KChuXnIpLXQrNjU1MzYpJTY1NTM2fSl9KSxufSx7ZW5jcnlwdDpmdW5jdGlvbih0LGUpe3ZhciBpLGYsYSxwDQpyZXR1cm4gaT1yKGUpLGY9cih0KSxhPWMoaSxmLmxlbmd0aCksZj1sKGYsYSkscD11KGYpLG8ocCxuLmJ0b2EsImJpbmFyeSIsImJhc2U2NCIpfSxkZWNyeXB0OmZ1bmN0aW9uKHUsaSl7dmFyIGYsYSxsLHMNCnJldHVybiBmPW8odSxuLmF0b2IsImJhc2U2NCIsImJpbmFyeSIpLGE9cihpKSxsPWUoZikscz1jKGEsbC5sZW5ndGgpLGw9cChsLHMpLHQobCl9fX0oJCkNCiQuYWRkRXZlbnRMaXN0ZW5lcignbWVzc2FnZScsZnVuY3Rpb24oZSl7dmFyIG09ZS5kYXRhOyQucG9zdE1lc3NhZ2Uoe3R5cGU6J3Jlc3VsdCcsZGF0YTphW20ubWV0aG9kXShtLmRhdGEsbS5rZXkpfSl9LCExKTs=';
+    source = '"use strict";var $=self,a=function(n){var r,t,e,u,o,c,i,f,a,l,p;return r=function(n){return[].map.call(n.normalize("NFKC"),function(n){return n.codePointAt(0)})},t=function(n){return String.fromCodePoint.apply(null,n)},e=function(n){var r;return r=[],n.split("").forEach(function(t,e){1&e||r.push(256*n.charCodeAt(e)+n.charCodeAt(e+1))}),r},u=function(n){var r;return r=[],n.forEach(function(n){r.push(n>>>8,n%256)}),String.fromCharCode.apply(null,r)},o=function(n,r,t,e){return r?r(n):new Buffer(n,t).toString(e)},c=function(n,r){var t,e;for(t=l(n,n),e=function(){var u;return u=l(t,n),t=t.concat(u),t.length>r?t:e};"function"==typeof e;)e=e();return e},i=function(n){return n.reduce(function(n,r){return r>n?n:r})},f=function(n){return n.reduce(function(n,r){return n>r?n:r})},a=function(n,r){return 1&(i(n)^f(n)^r)&&n.reverse(),n},l=function(n,r){return n=n.slice(0),r=r.slice(0),r.forEach(function(r){var t;t=r,n=a(n.map(function(n){var e;return e=(t+n^r)%65536,t=n,e}),r)}),n},p=function(n,r){return n=n.slice(0),r=r.slice(0),r.reverse(),r.forEach(function(r){var t;t=r,n=a(n,r).map(function(n){return t=((n^r)-t+65536)%65536})}),n},{encrypt:function(t,e){var i,f,a,p;return i=r(e),f=r(t),a=c(i,f.length),f=l(f,a),p=u(f),o(p,n.btoa,"binary","base64")},decrypt:function(u,i){var f,a,l,s;return f=o(u,n.atob,"base64","binary"),a=r(i),l=e(f),s=c(a,l.length),l=p(l,s),t(l)}}}($);$.addEventListener("message",function(e){var m=e.data;$.postMessage({type:"result",data:a[m.method](m.data,m.key)})},!1);';
 
-    createWorker = function createWorker(method, data, encryptionKey, callback) {
-        var worker;
+    url = URL.createObjectURL(new Blob([source], {
+        type:'application/javascript'
+    }));
+    
+    createWorker = function(method, data, key, callback) {
+        var
+        worker;
         
-        worker = new Worker(base64PES);
+        worker = new Worker(url);
         worker.callback = callback;
         worker.onmessage = onmessage;
-        methods[method].call(worker, data, encryptionKey, callback);
+        methods[method].call(worker, data, key, callback);
     };
 
     methods = {
-        encrypt: function encrypt(data, encryptionKey) {
+        encrypt: function(data, key) {
             this.postMessage({
                 method: 'encrypt',
                 data: data,
-                key: encryptionKey
+                key: key
             });
         },
-        decrypt: function decrypt(data, encryptionKey) {
+        decrypt: function(data, key) {
             this.postMessage({
                 method: 'decrypt',
                 data: data,
-                key: encryptionKey
+                key: key
             });
         }
     };
 
-    onmessage = function onmessage(event) {
+    onmessage = function(event) {
         this.terminate();
         this.callback(event.data.data);
     };
 
-    self.PES = {
-        encrypt: function encrypt(data, encryptionKey, callback) {
-            createWorker('encrypt', data, encryptionKey, callback);
+    return {
+        encrypt: function(data, key, callback) {
+            createWorker('encrypt', data, key, callback);
         },
-        decrypt: function encrypt(data, encryptionKey, callback) {
-            createWorker('decrypt', data, encryptionKey, callback);
+        decrypt: function(data, key, callback) {
+            createWorker('decrypt', data, key, callback);
         }
     };
-}());
+}();
