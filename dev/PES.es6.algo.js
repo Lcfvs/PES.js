@@ -85,6 +85,14 @@ PES = ((
         dataPoints
     )) =>
     ({
-        encrypt: (data, key) => ((dataPoints = toCodePoints(data)) => convert(toByteString(encryptData(dataPoints, getInternalKey(toCodePoints(key), dataPoints.length))), global.btoa, 'binary', 'base64'))(),
-        decrypt: (data, key) => ((dataPoints = fromByteString(convert(data, global.atob, 'base64', 'binary'))) => fromCodePoints(decryptData(dataPoints, getInternalKey(toCodePoints(key), dataPoints.length))))()
+        encrypt: (data, key) =>
+            ((dataPoints = toCodePoints(data)) =>
+                convert(toByteString(encryptData(
+                    dataPoints, getInternalKey(toCodePoints(key), dataPoints.length
+                ))), global.btoa, 'binary', 'base64')
+            )(),
+        decrypt: (data, key) =>
+            ((dataPoints = fromByteString(convert(data, global.atob, 'base64', 'binary'))) =>
+                fromCodePoints(decryptData(dataPoints, getInternalKey(toCodePoints(key), dataPoints.length)))
+            )()
     }))(typeof global === 'object' ? global : this);
